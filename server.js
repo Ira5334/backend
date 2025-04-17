@@ -38,13 +38,13 @@ app.post("/check-availability", (req, res) => {
   }
 
   // SQL запит для перевірки доступності номерів
-  const query = `
-    SELECT * FROM Rooms
-    WHERE room_id NOT IN (
-      SELECT room_id FROM Reservations
-      WHERE (check_in_date BETWEEN ? AND ?) OR (check_out_date BETWEEN ? AND ?)
-    );
-  `;
+const query = `
+  SELECT * FROM Rooms
+  WHERE room_id NOT IN (
+    SELECT room_id FROM Reservations
+    WHERE NOT (check_out_date <= ? OR check_in_date >= ?)
+  );
+`;
 
   // Перевірка доступності номерів
   db.query(query, [check_in_date, check_out_date, check_in_date, check_out_date], (err, results) => {
