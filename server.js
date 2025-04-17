@@ -6,25 +6,35 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const db = mysql.createConnection({
+// Пул з'єднань для стабільної роботи
+const db = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
+  database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
-db.connect(err => {
-  if (err) {
-    console.error("Помилка підключення до бази:", err);
-  } else {
-    console.log("Підключено до бази даних");
-  }
+// Проста логіка для запитів 
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
 });
 
+// Отримання всіх номерів
+app.get("/rooms", (req, res) => {
+  db.query("SELECT * FROM Rooms", (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(results);
+  });
+});
+
+// Перевірка доступності номерів
 app.post("/check-availability", (req, res) => {
   const { check_in_date, check_out_date } = req.body;
 
-  console.log("Тіло запиту:", req.body); // 👀
   if (!check_in_date || !check_out_date) {
     return res.status(400).json({ error: "Необхідно вказати дати заїзду та виїзду." });
   }
@@ -39,7 +49,7 @@ app.post("/check-availability", (req, res) => {
 
   db.query(query, [check_in_date, check_out_date], (err, results) => {
     if (err) {
-      console.error("💥 Помилка SQL-запиту:", err.message);
+      console.error("Помилка SQL-запиту:", err);
       return res.status(500).json({ error: "Помилка при перевірці доступності номерів." });
     }
 
@@ -51,7 +61,8 @@ app.post("/check-availability", (req, res) => {
   });
 });
 
+//  Запуск сервера
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Сервер працює на порту ${PORT}`);
+  console.log(` Сервер працює на порту ${PORT}`);
 });
