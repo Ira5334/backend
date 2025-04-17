@@ -47,7 +47,7 @@ const query = `
 `;
 
   // Перевірка доступності номерів
-  db.query(query, [check_in_date, check_out_date, check_in_date, check_out_date], (err, results) => {
+  db.query(query, [check_in_date, check_out_date], (err, results) => {
     if (err) {
       console.error("Помилка запиту:", err);
       return res.status(500).json({ error: "Помилка при перевірці доступності номерів." });
