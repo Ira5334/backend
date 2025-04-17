@@ -6,6 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Підключення до бази даних
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -37,33 +38,30 @@ app.post("/check-availability", (req, res) => {
     return res.status(400).json({ error: "Необхідно вказати дати заїзду та виїзду." });
   }
 
-  // SQL запит для перевірки доступності номерів
-const query = 
-  SELECT * FROM Rooms
-  WHERE room_id NOT IN (
-    SELECT room_id FROM Reservations
-    WHERE NOT (check_out_date <= ? OR check_in_date >= ?)
-  );
-;
+  // SQL-запит для перевірки доступних номерів
+  const query = `
+    SELECT * FROM Rooms
+    WHERE room_id NOT IN (
+      SELECT room_id FROM Reservations
+      WHERE NOT (check_out_date <= ? OR check_in_date >= ?)
+    )
+  `;
 
-  // Перевірка доступності номерів
   db.query(query, [check_in_date, check_out_date], (err, results) => {
     if (err) {
       console.error("Помилка запиту:", err);
       return res.status(500).json({ error: "Помилка при перевірці доступності номерів." });
     }
 
-    // Якщо немає доступних номерів
     if (results.length === 0) {
       return res.status(200).json({ message: "Немає доступних номерів на ці дати." });
     }
 
-    // Повертаємо доступні номери
     res.status(200).json(results);
   });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(Сервер працює на порту ${PORT});
+  console.log(`Сервер працює на порту ${PORT}`);
 });
