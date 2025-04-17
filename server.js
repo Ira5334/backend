@@ -31,9 +31,9 @@ app.get("/rooms", (req, res) => {
 
 // Перевірка доступності номерів
 app.post("/check-availability", (req, res) => {
-  const { check_in, check_out } = req.body;
+  const { check_in_date, check_out_date } = req.body;
 
-  if (!check_in || !check_out) {
+  if (!check_in_date || !check_out_date) {
     return res.status(400).json({ error: "Необхідно вказати дати заїзду та виїзду." });
   }
 
@@ -47,7 +47,7 @@ app.post("/check-availability", (req, res) => {
   `;
 
   // Перевірка доступності номерів
-  db.query(query, [check_in, check_out, check_in, check_out], (err, results) => {
+  db.query(query, [check_in_date, check_out_date, check_in_date, check_out_date], (err, results) => {
     if (err) {
       console.error("Помилка запиту:", err);
       return res.status(500).json({ error: "Помилка при перевірці доступності номерів." });
