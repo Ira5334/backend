@@ -42,7 +42,7 @@ app.post("/check-availability", (req, res) => {
     SELECT * FROM Rooms
     WHERE room_id NOT IN (
       SELECT room_id FROM Reservations
-      WHERE (check_in BETWEEN ? AND ?) OR (check_out BETWEEN ? AND ?)
+      WHERE (check_in_date BETWEEN ? AND ?) OR (check_out_date BETWEEN ? AND ?)
     );
   `;
 
