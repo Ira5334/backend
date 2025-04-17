@@ -21,6 +21,7 @@ db.connect(err => {
   }
 });
 
+// Отримання всіх номерів
 app.get("/rooms", (req, res) => {
   db.query("SELECT * FROM Rooms", (err, results) => {
     if (err) return res.status(500).json({ error: err });
@@ -28,6 +29,7 @@ app.get("/rooms", (req, res) => {
   });
 });
 
+// Перевірка доступності номерів
 app.post("/check-availability", (req, res) => {
   const { check_in, check_out } = req.body;
 
@@ -44,17 +46,19 @@ app.post("/check-availability", (req, res) => {
     );
   `;
 
+  // Перевірка доступності номерів
   db.query(query, [check_in, check_out, check_in, check_out], (err, results) => {
     if (err) {
       console.error("Помилка запиту:", err);
       return res.status(500).json({ error: "Помилка при перевірці доступності номерів." });
     }
 
-    // Повертаємо список доступних номерів
+    // Якщо немає доступних номерів
     if (results.length === 0) {
       return res.status(200).json({ message: "Немає доступних номерів на ці дати." });
     }
 
+    // Повертаємо доступні номери
     res.status(200).json(results);
   });
 });
