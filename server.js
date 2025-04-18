@@ -10,10 +10,10 @@ app.use(express.json());
 // Підключення до бази даних
 const db = mysql.createPool({
   host: process.env.DB_HOST,
+  port: process.env.DB_PORT, 
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT,
+  database: process.env.DB_NAME
 });
 
 // Отримання всіх номерів
@@ -32,7 +32,6 @@ app.post("/check-availability", (req, res) => {
     return res.status(400).json({ error: "Необхідно вказати дати заїзду та виїзду." });
   }
 
-  // SQL-запит для перевірки доступних номерів
   const query = `
     SELECT * FROM Rooms
     WHERE room_id NOT IN (
