@@ -15,14 +15,6 @@ const db = mysql.createPool({
   database: process.env.DB_NAME
 });
 
-db.connect(err => {
-  if (err) {
-    console.error("Помилка підключення до бази:", err);
-  } else {
-    console.log("Підключено до бази даних");
-  }
-});
-
 // Отримання всіх номерів
 app.get("/rooms", (req, res) => {
   db.query("SELECT * FROM Rooms", (err, results) => {
