@@ -20,8 +20,6 @@ const db = mysql.createPool({
   connectTimeout: 20000,
 });
 
-// ====== МАРШРУТИ ======
-
 // Отримати всі номери
 app.get("/rooms", (req, res) => {
   db.query("SELECT * FROM Rooms", (err, results) => {
