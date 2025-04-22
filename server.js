@@ -32,21 +32,27 @@ app.get("/rooms", (req, res) => {
 app.post("/check-availability", (req, res) => {
   const { check_in_date, check_out_date } = req.body;
 
-  if (!check_in_date || !check_out_date) {
-    return res.status(400).json({ error: "Необхідно вказати дати заїзду та виїзду." });
-  }
-
   const query = `
-    SELECT * FROM Rooms
+    SELECT DISTINCT room_type FROM Rooms
     WHERE room_id NOT IN (
       SELECT room_id FROM Reservations
-      WHERE NOT (check_out_date <= ? OR check_in_date >= ?)
-    )
+      WHERE NOT (
+        check_out_date <= ? OR check_in_date >= ?
+      )
+    );
   `;
 
   db.query(query, [check_in_date, check_out_date], (err, results) => {
-    if (err) return res.status(500).json({ error: "Помилка при перевірці доступності." });
-    res.status(200).json(results);
+    if (err) {
+      console.error("DB Error:", err);
+      return res.status(500).json({ message: "Помилка сервера" });
+    }
+
+    if (results.length === 0) {
+      return res.json({ message: "На жаль, немає доступних номерів у вибраний період." });
+    }
+
+    res.json(results);
   });
 });
 
