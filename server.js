@@ -91,6 +91,58 @@ app.post("/api/book", (req, res) => {
   );
 });
 
+// === Блок особистого кабінету користувача ===
+
+// Отримати дані користувача
+app.get("/api/user/:id", (req, res) => {
+  const userId = req.params.id;
+
+  db.query(
+    "SELECT id, first_name, last_name, email, phone FROM Customer WHERE id = ?",
+    [userId],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: "Помилка при отриманні даних користувача" });
+      if (results.length === 0) return res.status(404).json({ error: "Користувача не знайдено" });
+      res.json(results[0]);
+    }
+  );
+});
+
+// Оновити дані користувача
+app.put("/api/user/:id", (req, res) => {
+  const userId = req.params.id;
+  const { first_name, last_name, phone } = req.body;
+
+  db.query(
+    "UPDATE Customer SET first_name = ?, last_name = ?, phone = ? WHERE id = ?",
+    [first_name, last_name, phone, userId],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: "Помилка при оновленні даних" });
+      if (result.affectedRows === 0) return res.status(404).json({ error: "Користувача не знайдено" });
+      res.json({ message: "Дані оновлено" });
+    }
+  );
+});
+
+// Історія бронювань користувача
+app.get("/api/reservations/user/:id", (req, res) => {
+  const userId = req.params.id;
+
+  const query = `
+    SELECT r.id, r.check_in_date, r.check_out_date, r.status,
+           ro.room_number, ro.type AS room_type
+    FROM Reservations r
+    JOIN Rooms ro ON r.room_id = ro.id
+    WHERE r.customer_id = ?
+    ORDER BY r.check_in_date DESC
+  `;
+
+  db.query(query, [userId], (err, results) => {
+    if (err) return res.status(500).json({ error: "Помилка при отриманні бронювань" });
+    res.json(results);
+  });
+});
+
 // Запуск сервера
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
