@@ -114,13 +114,8 @@ app.post("/api/login", (req, res) => {
     }
 
     const user = results[0];
-    res.status(200).json({ 
-  success: true, 
-  message: "Успішний вхід", 
-  userId: user.customer_id,
-  email: user.email 
-});
-
+    res.status(200).json({ success: true, message: "Успішний вхід", userEmail: user.email });
+  });
 });
 
 // Отримати дані користувача
