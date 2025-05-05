@@ -123,7 +123,7 @@ app.get("/api/user/:id", (req, res) => {
   const userId = req.params.id;
 
   db.query(
-    "SELECT customer_id, first_name, last_name, email, phone FROM Customer WHERE id = ?",
+    "SELECT customer_id, first_name, last_name, email, phone FROM Customer WHERE customer_id = ?",
     [userId],
     (err, results) => {
       if (err) return res.status(500).json({ error: "Помилка при отриманні даних користувача" });
