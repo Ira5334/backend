@@ -123,7 +123,7 @@ app.get("/api/user/:id", (req, res) => {
   const userId = req.params.id;
 
   db.query(
-    "SELECT customer_id, first_name, last_name, email, phone FROM Customer WHERE customer_id = ?",
+    "SELECT  first_name, last_name, email, phone_number FROM Customer WHERE customer_id = ?",
     [userId],
     (err, results) => {
       if (err) return res.status(500).json({ error: "Помилка при отриманні даних користувача" });
@@ -136,10 +136,10 @@ app.get("/api/user/:id", (req, res) => {
 // Оновити дані користувача
 app.put("/api/user/:id", (req, res) => {
   const userId = req.params.id;
-  const { first_name, last_name, phone } = req.body;
+  const { first_name, last_name, phone_number } = req.body;
 
   db.query(
-    "UPDATE Customer SET first_name = ?, last_name = ?, phone = ? WHERE customer_id = ?",
+    "UPDATE Customer SET first_name = ?, last_name = ?, phone_number = ? WHERE customer_id = ?",
     [first_name, last_name, phone, userId],
     (err, result) => {
       if (err) return res.status(500).json({ error: "Помилка при оновленні даних" });
@@ -154,13 +154,10 @@ app.get("/api/reservations/user/:id", (req, res) => {
   const userId = req.params.id;
 
   const query = `
-    SELECT r.id, r.check_in_date, r.check_out_date, r.status,
-           ro.room_number, ro.type AS room_type
-    FROM Reservations r
-    JOIN Rooms ro ON r.room_id = ro.id
-    WHERE r.customer_id = ?
-    ORDER BY r.check_in_date DESC
-  `;
+   SELECT r.room_type, res.check_in_date, res.check_out_date, res.status
+    FROM Reservations res
+    JOIN Rooms r ON res.room_id = r.room_id
+    WHERE res.customer_id = ?`;
 
   db.query(query, [userId], (err, results) => {
     if (err) return res.status(500).json({ error: "Помилка при отриманні бронювань" });
