@@ -72,6 +72,12 @@ app.post("/api/book", (req, res) => {
     return res.status(400).json({ success: false, error: "Будь ласка, заповніть всі обов'язкові поля." });
   }
 
+  const today = new Date().toISOString().split("T")[0];
+
+  if (check_in < today || check_out <= check_in) {
+    return res.status(400).json({ success: false, error: "Некоректні дати: не можна забронювати на минулі дні або зробити виїзд раніше за заїзд." });
+  }
+
   const query = `
     INSERT INTO Reservations (room_type, price, name, email, check_in_date, check_out_date, total_price)
     VALUES (?, ?, ?, ?, ?, ?, ?)
