@@ -119,47 +119,50 @@ app.post("/api/login", (req, res) => {
 });
 
 // Отримати дані користувача
-app.get("/api/user/:id", (req, res) => {
-  const userId = req.params.id;
-
-  db.query(
-    "SELECT  first_name, last_name, email, phone_number FROM Customer WHERE customer_id = ?",
-    [userId],
-    (err, results) => {
-      if (err) return res.status(500).json({ error: "Помилка при отриманні даних користувача" });
-      if (results.length === 0) return res.status(404).json({ error: "Користувача не знайдено" });
-      res.json(results[0]);
-    }
-  );
-});
-
-// Оновити дані користувача
-app.put("/api/user/:id", (req, res) => {
-  const userId = req.params.id;
-  const { first_name, last_name, phone_number } = req.body;
-
-  db.query(
-    "UPDATE Customer SET first_name = ?, last_name = ?, phone_number = ? WHERE customer_id = ?",
-    [first_name, last_name, phone, userId],
-    (err, result) => {
-      if (err) return res.status(500).json({ error: "Помилка при оновленні даних" });
-      if (result.affectedRows === 0) return res.status(404).json({ error: "Користувача не знайдено" });
-      res.json({ message: "Дані оновлено" });
-    }
-  );
-});
-
-// Історія бронювань користувача
-app.get("/api/reservations/user/:id", (req, res) => {
-  const userId = req.params.id;
+app.get("/api/user/email/:email", (req, res) => {
+  const email = req.params.email;
 
   const query = `
-   SELECT r.room_type, res.check_in_date, res.check_out_date, res.status
-    FROM Reservations res
-    JOIN Rooms r ON res.room_id = r.room_id
-    WHERE res.customer_id = ?`;
+    SELECT first_name, last_name, email, phone_number
+    FROM Customer
+    WHERE email = ?
+  `;
 
-  db.query(query, [userId], (err, results) => {
+  db.query(query, [email], (err, results) => {
+    if (err) return res.status(500).json({ error: "Помилка при отриманні даних користувача" });
+    if (results.length === 0) return res.status(404).json({ error: "Користувача не знайдено" });
+    res.json(results[0]);
+  });
+});
+
+// Оновлення даних користувача 
+app.put("/api/user/email/:email", (req, res) => {
+  const email = req.params.email;
+  const { first_name, last_name, phone_number } = req.body;
+
+  const query = `
+    UPDATE Customer 
+    SET first_name = ?, last_name = ?, phone_number = ?
+    WHERE email = ?
+  `;
+  db.query(query, [first_name, last_name, phone_number, email], (err, results) => {
+    if (err) return res.status(500).json({ error: "Помилка оновлення" });
+    res.json({ message: "Успішно оновлено" });
+  });
+});
+
+
+// Історія бронювань користувача
+app.get("/api/reservations/email/:email", (req, res) => {
+  const email = req.params.email;
+
+  const query = `
+    SELECT room_type, check_in_date, check_out_date, status
+    FROM Reservations
+    WHERE email = ?
+  `;
+
+  db.query(query, [email], (err, results) => {
     if (err) return res.status(500).json({ error: "Помилка при отриманні бронювань" });
     res.json(results);
   });
