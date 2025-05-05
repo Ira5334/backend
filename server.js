@@ -93,12 +93,37 @@ app.post("/api/book", (req, res) => {
 
 // === Блок особистого кабінету користувача ===
 
+// Авторизація користувача
+app.post("/api/login", (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ success: false, message: "Будь ласка, введіть email та пароль." });
+  }
+
+  const query = "SELECT * FROM Customer WHERE email = ? AND password = ?";
+
+  db.query(query, [email, password], (err, results) => {
+    if (err) {
+      console.error("Помилка авторизації:", err);
+      return res.status(500).json({ success: false, message: "Помилка сервера." });
+    }
+
+    if (results.length === 0) {
+      return res.status(401).json({ success: false, message: "Невірний email або пароль." });
+    }
+
+    const user = results[0];
+    res.status(200).json({ success: true, message: "Успішний вхід", userId: user.customer_id });
+  });
+});
+
 // Отримати дані користувача
 app.get("/api/user/:id", (req, res) => {
   const userId = req.params.id;
 
   db.query(
-    "SELECT id, first_name, last_name, email, phone FROM Customer WHERE id = ?",
+    "SELECT customer_id, first_name, last_name, email, phone FROM Customer WHERE id = ?",
     [userId],
     (err, results) => {
       if (err) return res.status(500).json({ error: "Помилка при отриманні даних користувача" });
@@ -114,7 +139,7 @@ app.put("/api/user/:id", (req, res) => {
   const { first_name, last_name, phone } = req.body;
 
   db.query(
-    "UPDATE Customer SET first_name = ?, last_name = ?, phone = ? WHERE id = ?",
+    "UPDATE Customer SET first_name = ?, last_name = ?, phone = ? WHERE customer_id = ?",
     [first_name, last_name, phone, userId],
     (err, result) => {
       if (err) return res.status(500).json({ error: "Помилка при оновленні даних" });
