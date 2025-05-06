@@ -2,10 +2,8 @@ require("dotenv").config();
 const express = require("express");
 const mysql = require("mysql2");
 const cors = require("cors");
-const jwt = require("jsonwebtoken");
 
 const app = express();
-const SECRET_KEY = process.env.JWT_SECRET || "default_secret_key";
 
 // Middlewares
 app.use(cors());
@@ -41,7 +39,7 @@ app.post("/check-availability", (req, res) => {
       WHERE NOT (
         check_out_date <= ? OR check_in_date >= ?
       )
-    )
+    );
   `;
 
   db.query(query, [check_in_date, check_out_date], (err, results) => {
@@ -74,6 +72,12 @@ app.post("/api/book", (req, res) => {
     return res.status(400).json({ success: false, error: "Будь ласка, заповніть всі обов'язкові поля." });
   }
 
+  const today = new Date().toISOString().split("T")[0];
+
+  if (check_in < today || check_out <= check_in) {
+    return res.status(400).json({ success: false, error: "Некоректні дати: не можна забронювати на минулі дні або зробити виїзд раніше за заїзд." });
+  }
+
   const query = `
     INSERT INTO Reservations (room_type, price, name, email, check_in_date, check_out_date, total_price)
     VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -93,7 +97,9 @@ app.post("/api/book", (req, res) => {
   );
 });
 
-// Авторизація користувача (видача токена)
+// === Блок особистого кабінету користувача ===
+
+// Авторизація користувача
 app.post("/api/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -114,28 +120,13 @@ app.post("/api/login", (req, res) => {
     }
 
     const user = results[0];
-    const token = jwt.sign({ email: user.email }, SECRET_KEY, { expiresIn: "2h" });
-    res.status(200).json({ success: true, message: "Успішний вхід", token });
+    res.status(200).json({ success: true, message: "Успішний вхід", userEmail: user.email });
   });
 });
 
-// Middleware для перевірки токена
-function authenticateToken(req, res, next) {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
-
-  if (!token) return res.status(401).json({ error: "Неавторизований доступ" });
-
-  jwt.verify(token, SECRET_KEY, (err, user) => {
-    if (err) return res.status(403).json({ error: "Недійсний токен" });
-    req.user = user;
-    next();
-  });
-}
-
 // Отримати дані користувача
-app.get("/api/user/profile", authenticateToken, (req, res) => {
-  const email = req.user.email;
+app.get("/api/user/email/:email", (req, res) => {
+  const email = req.params.email;
 
   const query = `
     SELECT first_name, last_name, email, phone_number
@@ -150,9 +141,9 @@ app.get("/api/user/profile", authenticateToken, (req, res) => {
   });
 });
 
-// Оновити дані користувача
-app.put("/api/user/profile", authenticateToken, (req, res) => {
-  const email = req.user.email;
+// Оновлення даних користувача 
+app.put("/api/user/email/:email", (req, res) => {
+  const email = req.params.email;
   const { first_name, last_name, phone_number } = req.body;
 
   const query = `
@@ -160,16 +151,16 @@ app.put("/api/user/profile", authenticateToken, (req, res) => {
     SET first_name = ?, last_name = ?, phone_number = ?
     WHERE email = ?
   `;
-
-  db.query(query, [first_name, last_name, phone_number, email], (err) => {
+  db.query(query, [first_name, last_name, phone_number, email], (err, results) => {
     if (err) return res.status(500).json({ error: "Помилка оновлення" });
     res.json({ message: "Успішно оновлено" });
   });
 });
 
+
 // Історія бронювань користувача
-app.get("/api/reservations", authenticateToken, (req, res) => {
-  const email = req.user.email;
+app.get("/api/reservations/email/:email", (req, res) => {
+  const email = req.params.email;
 
   const query = `
     SELECT room_type, check_in_date, check_out_date, status
