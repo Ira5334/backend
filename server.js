@@ -99,6 +99,39 @@ app.post("/api/book", (req, res) => {
 
 // === Блок особистого кабінету користувача ===
 
+// Реєстрація користувача
+app.post("/api/register", (req, res) => {
+  const { name, email, phone_number, password } = req.body;
+
+  if (!name || !email || !phone_number || !password) {
+    return res.status(400).json({ success: false, message: "Будь ласка, заповніть всі поля." });
+  }
+
+  // Перевірка наявності користувача з таким email
+  const checkQuery = "SELECT * FROM Customer WHERE email = ?";
+  db.query(checkQuery, [email], (err, results) => {
+    if (err) {
+      console.error("Помилка перевірки email:", err);
+      return res.status(500).json({ success: false, message: "Помилка сервера." });
+    }
+
+    if (results.length > 0) {
+      return res.status(409).json({ success: false, message: "Користувач з таким email вже існує." });
+    }
+
+    // Додати нового користувача
+    const insertQuery = "INSERT INTO Customer (name, email, phone_number, password) VALUES (?, ?, ?, ?)";
+    db.query(insertQuery, [name, email, phone_number, password], (err, result) => {
+      if (err) {
+        console.error("Помилка при реєстрації:", err);
+        return res.status(500).json({ success: false, message: "Помилка під час збереження користувача." });
+      }
+
+      res.status(201).json({ success: true, message: "Користувача зареєстровано успішно", userEmail: email });
+    });
+  });
+});
+
 // Авторизація користувача
 app.post("/api/login", (req, res) => {
   const { email, password } = req.body;
