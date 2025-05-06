@@ -174,6 +174,34 @@ app.get("/api/reservations/email/:email", (req, res) => {
   });
 });
 
+// Зберегти відгук користувача
+app.post("/api/review", (req, res) => {
+  const { email, review } = req.body;
+
+  if (!email || !review) {
+    return res.status(400).json({ success: false, message: "Email та відгук є обов’язковими." });
+  }
+
+  const query = `
+    UPDATE Customer
+    SET review = ?
+    WHERE email = ?
+  `;
+
+  db.query(query, [review, email], (err, result) => {
+    if (err) {
+      console.error("Помилка при збереженні відгуку:", err);
+      return res.status(500).json({ success: false, message: "Помилка сервера." });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: "Користувача з таким email не знайдено." });
+    }
+
+    res.json({ success: true, message: "Ваш відгук успішно записаний." });
+  });
+});
+
 // Запуск сервера
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
