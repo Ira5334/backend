@@ -181,20 +181,23 @@ app.post("/api/review", (req, res) => {
   if (!email || !review) {
     return res.status(400).json({ success: false, message: "Email та відгук є обов’язковими." });
   }
-const checkQuery = "SELECT * FROM Customer WHERE email = ?";
-db.query(checkQuery, [email], (err, users) => {
-  if (err) return res.status(500).json({ success: false, message: "Помилка сервера." });
-  if (users.length === 0) return res.status(404).json({ success: false, message: "Користувача не знайдено." });
-}
-  const updateQuery = `UPDATE Customer SET review = ? WHERE email = ?`;
-  db.query(updateQuery, [review, email], (err, result) => {
-    if (err) {
-      console.error("Помилка при оновленні відгуку:", err);
-      return res.status(500).json({ success: false, message: "Помилка сервера." });
-    }
-    res.json({ success: true, message: "Ваш відгук успішно записаний." });
+
+  const checkQuery = "SELECT * FROM Customer WHERE email = ?";
+  db.query(checkQuery, [email], (err, users) => {
+    if (err) return res.status(500).json({ success: false, message: "Помилка сервера." });
+    if (users.length === 0) return res.status(404).json({ success: false, message: "Користувача не знайдено." });
+
+    const updateQuery = `UPDATE Customer SET review = ? WHERE email = ?`;
+    db.query(updateQuery, [review, email], (err, result) => {
+      if (err) {
+        console.error("Помилка при оновленні відгуку:", err);
+        return res.status(500).json({ success: false, message: "Помилка сервера." });
+      }
+      res.json({ success: true, message: "Ваш відгук успішно записаний." });
+    });
   });
 });
+
 
 // Запуск сервера
 const PORT = process.env.PORT || 8080;
