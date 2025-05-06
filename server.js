@@ -39,7 +39,7 @@ app.post("/check-availability", (req, res) => {
       WHERE NOT (
         check_out_date <= ? OR check_in_date >= ?
       )
-    );
+    )
   `;
 
   db.query(query, [check_in_date, check_out_date], (err, results) => {
@@ -72,12 +72,6 @@ app.post("/api/book", (req, res) => {
     return res.status(400).json({ success: false, error: "Будь ласка, заповніть всі обов'язкові поля." });
   }
 
-  const today = new Date().toISOString().split("T")[0];
-
-  if (check_in < today || check_out <= check_in) {
-    return res.status(400).json({ success: false, error: "Некоректні дати: не можна забронювати на минулі дні або зробити виїзд раніше за заїзд." });
-  }
-
   const query = `
     INSERT INTO Reservations (room_type, price, name, email, check_in_date, check_out_date, total_price)
     VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -96,8 +90,6 @@ app.post("/api/book", (req, res) => {
     }
   );
 });
-
-// === Блок особистого кабінету користувача ===
 
 // Авторизація користувача
 app.post("/api/login", (req, res) => {
@@ -141,7 +133,7 @@ app.get("/api/user/email/:email", (req, res) => {
   });
 });
 
-// Оновлення даних користувача 
+// Оновити дані користувача
 app.put("/api/user/email/:email", (req, res) => {
   const email = req.params.email;
   const { first_name, last_name, phone_number } = req.body;
@@ -151,12 +143,12 @@ app.put("/api/user/email/:email", (req, res) => {
     SET first_name = ?, last_name = ?, phone_number = ?
     WHERE email = ?
   `;
-  db.query(query, [first_name, last_name, phone_number, email], (err, results) => {
+
+  db.query(query, [first_name, last_name, phone_number, email], (err) => {
     if (err) return res.status(500).json({ error: "Помилка оновлення" });
     res.json({ message: "Успішно оновлено" });
   });
 });
-
 
 // Історія бронювань користувача
 app.get("/api/reservations/email/:email", (req, res) => {
@@ -179,3 +171,4 @@ const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`✅ Сервер працює на порту ${PORT}`);
 });
+
