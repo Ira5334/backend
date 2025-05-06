@@ -2,8 +2,10 @@ require("dotenv").config();
 const express = require("express");
 const mysql = require("mysql2");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 
 const app = express();
+const SECRET_KEY = process.env.JWT_SECRET || "default_secret_key";
 
 // Middlewares
 app.use(cors());
@@ -91,7 +93,7 @@ app.post("/api/book", (req, res) => {
   );
 });
 
-// Авторизація користувача
+// Авторизація користувача (видача токена)
 app.post("/api/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -112,13 +114,28 @@ app.post("/api/login", (req, res) => {
     }
 
     const user = results[0];
-    res.status(200).json({ success: true, message: "Успішний вхід", userEmail: user.email });
+    const token = jwt.sign({ email: user.email }, SECRET_KEY, { expiresIn: "2h" });
+    res.status(200).json({ success: true, message: "Успішний вхід", token });
   });
 });
 
+// Middleware для перевірки токена
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (!token) return res.status(401).json({ error: "Неавторизований доступ" });
+
+  jwt.verify(token, SECRET_KEY, (err, user) => {
+    if (err) return res.status(403).json({ error: "Недійсний токен" });
+    req.user = user;
+    next();
+  });
+}
+
 // Отримати дані користувача
-app.get("/api/user/email/:email", (req, res) => {
-  const email = req.params.email;
+app.get("/api/user/profile", authenticateToken, (req, res) => {
+  const email = req.user.email;
 
   const query = `
     SELECT first_name, last_name, email, phone_number
@@ -134,8 +151,8 @@ app.get("/api/user/email/:email", (req, res) => {
 });
 
 // Оновити дані користувача
-app.put("/api/user/email/:email", (req, res) => {
-  const email = req.params.email;
+app.put("/api/user/profile", authenticateToken, (req, res) => {
+  const email = req.user.email;
   const { first_name, last_name, phone_number } = req.body;
 
   const query = `
@@ -151,8 +168,8 @@ app.put("/api/user/email/:email", (req, res) => {
 });
 
 // Історія бронювань користувача
-app.get("/api/reservations/email/:email", (req, res) => {
-  const email = req.params.email;
+app.get("/api/reservations", authenticateToken, (req, res) => {
+  const email = req.user.email;
 
   const query = `
     SELECT room_type, check_in_date, check_out_date, status
@@ -171,4 +188,3 @@ const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`✅ Сервер працює на порту ${PORT}`);
 });
-
