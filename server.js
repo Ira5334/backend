@@ -181,7 +181,10 @@ app.post("/api/review", (req, res) => {
   if (!email || !review) {
     return res.status(400).json({ success: false, message: "Email та відгук є обов’язковими." });
   }
-
+const checkQuery = "SELECT * FROM Customer WHERE email = ?";
+db.query(checkQuery, [email], (err, users) => {
+  if (err) return res.status(500).json({ success: false, message: "Помилка сервера." });
+  if (users.length === 0) return res.status(404).json({ success: false, message: "Користувача не знайдено." });
   const query = `
     UPDATE Customer
     SET review = ?
